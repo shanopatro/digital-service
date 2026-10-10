@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Digital Visiting Card</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏪</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Mukta+Malar:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --deep:#0F4C4A;      /* header + buttons */
+  --mist:#EEF4F3;      /* page background */
+  --ink:#16302F;       /* text */
+  --paper:#FFFFFF;
+  --gold:#F2B632;      /* accent: one place only */
+  --line:#CFDEDC;
+  --wa:#1E8E4E;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:"Mukta Malar","Noto Sans Tamil",system-ui,sans-serif;
+  background:var(--mist);color:var(--ink);
+  line-height:1.6;font-size:17px;
+  display:flex;justify-content:center;
+  padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0);
+}
+main{width:100%;max-width:440px;background:var(--paper);min-height:100vh}
+header{
+  background:var(--deep);color:#fff;
+  padding:40px 24px 32px;
+  border-bottom:6px solid var(--gold);
+}
+header h1{font-size:2.1rem;line-height:1.2;font-weight:800;letter-spacing:.01em}
+header .tag{margin-top:8px;opacity:.9;font-size:1.05rem}
+header .owner{margin-top:18px;font-weight:600;font-size:.98rem;opacity:.85}
+
+.actions{display:flex;flex-direction:column}
+.actions a,.actions button{
+  display:flex;align-items:center;gap:14px;
+  padding:18px 24px;border:0;border-bottom:1px solid var(--line);
+  background:var(--paper);color:var(--ink);
+  font:inherit;font-weight:600;font-size:1.1rem;text-align:left;
+  text-decoration:none;cursor:pointer;width:100%;
+}
+.actions a:active,.actions button:active{background:var(--mist)}
+.actions .ico{font-size:1.4rem;width:2rem;text-align:center}
+.actions small{display:block;font-weight:400;font-size:.88rem;opacity:.7}
+.actions .wa{background:var(--wa);color:#fff;border-bottom-color:var(--wa)}
+.actions .wa small{opacity:.9}
+
+section{padding:26px 24px;border-bottom:1px solid var(--line)}
+section h2{font-size:1.15rem;font-weight:800;margin-bottom:10px;color:var(--deep)}
+.services li{list-style:none;padding:6px 0 6px 18px;position:relative}
+.services li::before{content:"";position:absolute;left:0;top:.95em;width:8px;height:8px;background:var(--gold);border-radius:50%}
+.info p+p{margin-top:8px}
+footer{padding:22px 24px 34px;text-align:center;font-size:.9rem;opacity:.8}
+footer a{color:var(--deep);font-weight:600}
+a:focus-visible,button:focus-visible{outline:3px solid var(--gold);outline-offset:-3px}
+#toast{
+  position:fixed;left:50%;bottom:24px;transform:translateX(-50%);
+  background:var(--ink);color:#fff;padding:10px 18px;border-radius:8px;
+  font-size:.95rem;display:none;
+}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1 id="name"></h1>
+    <p class="tag" id="tagline"></p>
+    <p class="owner" id="owner"></p>
+  </header>
+
+  <nav class="actions" id="actions" aria-label="தொடர்பு"></nav>
+
+  <section class="services" id="servicesBox" hidden>
+    <h2>எங்கள் சேவைகள்</h2>
+    <ul id="services"></ul>
+  </section>
+
+  <section class="info" id="infoBox">
+    <h2>முகவரி & நேரம்</h2>
+    <p id="address"></p>
+    <p id="hours"></p>
+  </section>
+
+  <footer>
+    இந்த card-ஐ உருவாக்கியது <a id="studioLink" href="#"></a>
+  </footer>
+</main>
+<div id="toast" role="status"></div>
+
+<script>
+/* ============================================================
+   இந்த CONFIG பகுதியை மட்டும் மாத்துங்க. வேற எதையும் தொட வேண்டாம்.
+   ============================================================ */
+const CONFIG = {
+  shopName: "SV Xerox Shop",
+  tagline:  "Xerox • Printing • Online சேவைகள்",
+  owner:    "உரிமையாளர்: ஷான்",
+  phone:    "8489424109",
+  whatsapp: "918489424109",
+  address:  "இங்கே உங்க கடை முகவரி எழுதுங்க",
+  hours:    "தினமும் காலை 9 மணி - இரவு 8 மணி",
+  mapLink:  "https://maps.google.com/?q=Nagapattinam",
+  services: [
+    "Xerox (கருப்பு வெள்ளை & கலர்)",
+    "Printout & Scan",
+    "Lamination & Binding",
+    "Passport size போட்டோ",
+    "ஆன்லைன் விண்ணப்பங்கள்"
+  ],
+  whatsappMsg: "வணக்கம், உங்கள் கடை சேவைகள் பற்றி தெரிந்துகொள்ள விரும்புகிறேன்.",
+  studioName: "SHAN WEB STUDIO",
+  studioLink: "https://wa.me/918489424109"
+};
+/* ============================================================ */
+
+const $ = id => document.getElementById(id);
+const C = CONFIG;
+
+document.title = C.shopName;
+$("name").textContent = C.shopName;
+$("tagline").textContent = C.tagline;
+$("owner").textContent = C.owner;
+$("address").textContent = C.address;
+$("hours").textContent = C.hours;
+$("studioLink").textContent = C.studioName;
+$("studioLink").href = C.studioLink;
+
+if (C.services && C.services.length) {
+  $("servicesBox").hidden = false;
+  C.services.forEach(s => {
+    const li = document.createElement("li");
+    li.textContent = s;
+    $("services").appendChild(li);
+  });
+}
+
+function toast(msg){
+  const t = $("toast");
+  t.textContent = msg;
+  t.style.display = "block";
+  setTimeout(() => t.style.display = "none", 2200);
+}
+
+function addAction(tag, cls, icon, label, sub, props){
+  const el = document.createElement(tag);
+  if (cls) el.className = cls;
+  Object.assign(el, props || {});
+  const i = document.createElement("span");
+  i.className = "ico"; i.textContent = icon;
+  const txt = document.createElement("span");
+  txt.textContent = label;
+  if (sub) {
+    const s = document.createElement("small");
+    s.textContent = sub;
+    txt.appendChild(s);
+  }
+  el.append(i, txt);
+  $("actions").appendChild(el);
+  return el;
+}
+
+addAction("a", "wa", "💬", "WhatsApp-ல் பேசுங்க", "உடனே பதில் கிடைக்கும்", {
+  href: "https://wa.me/" + C.whatsapp + "?text=" + encodeURIComponent(C.whatsappMsg),
+  target: "_blank", rel: "noopener"
+});
+addAction("a", "", "📞", "அழைக்க", C.phone, { href: "tel:+91" + C.phone });
+addAction("a", "", "📍", "Google Map-ல் பார்க்க", "வழி காட்டும்", {
+  href: C.mapLink, target: "_blank", rel: "noopener"
+});
+
+const saveBtn = addAction("button", "", "👤", "என் போனில் சேமிக்க", "Contact save ஆகும்");
+saveBtn.type = "button";
+saveBtn.addEventListener("click", () => {
+  const vcf = [
+    "BEGIN:VCARD","VERSION:3.0",
+    "FN:" + C.shopName,
+    "ORG:" + C.shopName,
+    "TEL;TYPE=CELL:+91" + C.phone,
+    "ADR;TYPE=WORK:;;" + C.address + ";;;;",
+    "END:VCARD"
+  ].join("\r\n");
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([vcf], { type: "text/vcard" }));
+  a.download = C.shopName + ".vcf";
+  document.body.appendChild(a); a.click(); a.remove();
+  toast("Contact பதிவிறக்கம் ஆகிறது");
+});
+
+const shareBtn = addAction("button", "", "🔗", "நண்பர்களுக்கு பகிர", "இந்த card-ஐ share செய்ய");
+shareBtn.type = "button";
+shareBtn.addEventListener("click", async () => {
+  const data = { title: C.shopName, text: C.shopName + " - " + C.tagline, url: location.href };
+  try {
+    if (navigator.share) { await navigator.share(data); }
+    else { await navigator.clipboard.writeText(location.href); toast("Link copy ஆனது"); }
+  } catch (e) { /* user cancelled */ }
+});
+</script>
+</body>
+</html>
